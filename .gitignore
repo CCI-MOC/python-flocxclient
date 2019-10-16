@@ -1,0 +1,10 @@
+AUTHORS
+build/
+ChangeLog
+.coverage
+*.egg-info/
+.eggs/
+.idea/
+*.pyc
+__pycache__/
+.tox/

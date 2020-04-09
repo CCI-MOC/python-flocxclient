@@ -10,24 +10,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-
-
-AUTH_TOKEN = "foobar"
-AUTH_URL = "http://0.0.0.0"
 
 # A random explicit version
 API_VERSION = '1.0'
-
-
-class FakeApp(object):
-    def __init__(self):
-        _stdout = None
-        self.client_manager = None
-        self.stdin = sys.stdin
-        self.stdout = _stdout or sys.stdout
-        self.stderr = sys.stderr
-        self.restapi = None
 
 
 class FakeClientManager(object):

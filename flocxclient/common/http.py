@@ -17,21 +17,9 @@ from oslo_serialization import jsonutils
 from http import client as http_client
 
 DEFAULT_VER = '1.0'
-LAST_KNOWN_API_VERSION = 1
-LATEST_VERSION = '1.{}'.format(LAST_KNOWN_API_VERSION)
-
 LOG = logging.getLogger(__name__)
+
 USER_AGENT = 'python-flocxclient'
-
-_MAJOR_VERSION = 1
-API_VERSION = '/v%d' % _MAJOR_VERSION
-API_VERSION_SELECTED_STATES = ('user', 'negotiated', 'cached', 'default')
-
-
-DEFAULT_MAX_RETRIES = 0
-DEFAULT_RETRY_INTERVAL = 2
-
-SUPPORTED_ENDPOINT_SCHEME = ('http', 'https')
 
 
 class SessionClient(adapter.LegacyJsonAdapter):

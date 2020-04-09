@@ -27,6 +27,12 @@ To install this package, run `python3 setup.py install` on the command line
 # Examples:
 
     openstack market offer list
-will print to screen a list of all the offers in the flocx database
+will make a GET request and print to screen a list of all the offers in the flocx database
+
+    openstack market offer show
+will make a GET request fields for offer with id marketplace_offer_id
+
+    openstack market offer create
+will make a POST request and print to the screen the newly created offer
 
 # This repository is currently a work in progress

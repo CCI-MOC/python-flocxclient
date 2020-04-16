@@ -23,9 +23,11 @@ class Offer(base.Resource):
         return "<Offer %s>" % self._info
 
 
-class OfferManager(base.CreateManager):
+class OfferManager(base.Manager):
     resource_class = Offer
-    _creation_attributes = []
+    _creation_attributes = ['provider_offer_id', 'status',
+                            'project_id', 'server_id', 'start_time',
+                            'end_time', 'server_config', 'cost']
     _resource_name = 'offer'
 
     def list(self, os_flocx_api_version=None):
@@ -34,6 +36,26 @@ class OfferManager(base.CreateManager):
         """
 
         path = ''
+        offers = self._list(self._path(path),
+                            os_flocx_api_version=os_flocx_api_version)
 
-        return self._list(self._path(path),
-                          os_flocx_api_version=os_flocx_api_version)
+        return offers
+
+    def get(self, offer_id):
+        """Get an offer with the specified identifier.
+        :param offer_id: The UUID or name of an allocation.
+        :returns: a :class:`Offer` object.
+        """
+
+        offer = self._get(resource_id=offer_id)
+
+        return offer
+
+    def create(self, **kwargs):
+        """Create an offer based on a kwargs dictionary of attributes.
+        :returns: a :class: `Offer` object
+        """
+
+        offer = self._create(**kwargs)
+
+        return offer

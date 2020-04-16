@@ -12,6 +12,7 @@
 
 import mock
 import pytest
+import testtools
 
 
 from flocxclient.common import http
@@ -33,7 +34,7 @@ def _session_client(**kwargs):
                               **kwargs)
 
 
-class SessionClientTest(utils.BaseTestCase):
+class SessionClientTest(testtools.TestCase):
 
     def test_json_request(self):
         session = utils.mockSession({})

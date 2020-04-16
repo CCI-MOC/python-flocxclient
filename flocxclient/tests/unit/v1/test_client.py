@@ -1,12 +1,12 @@
 import mock
+import testtools
 
 from flocxclient.common import http
-from flocxclient.tests.unit import utils
 from flocxclient.v1 import client
 
 
 @mock.patch.object(http, '_construct_http_client', autospec=True)
-class ClientTest(utils.BaseTestCase):
+class ClientTest(testtools.TestCase):
 
     def test_client_user_api_version(self, http_client_mock):
         os_flocx_api_version = '1.15'

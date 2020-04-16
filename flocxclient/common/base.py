@@ -40,6 +40,12 @@ class Manager(object):
         """The resource name.
         """
 
+    @property
+    @abc.abstractmethod
+    def _creation_attributes(self):
+        """A list of required creation attributes for a resource type.
+        """
+
     def __init__(self, api):
         self.api = api
 
@@ -58,24 +64,39 @@ class Manager(object):
         return ('/%s/%s' % (self._resource_name, resource_id)
                 if resource_id else '/%s' % self._resource_name)
 
-    def _format_body_data(self, body, response_key):
+    def _get(self, resource_id, os_flocx_api_version=None):
+        """Retrieve a resource.
+        :param resource_id: Identifier of the resource.
+        :param os_flocx_api_version: String version (e.g. "1.35") to use for
+            the request.  If not specified, the client's default is used.
+        :raises exc.ValidationError: For invalid resource_id arg value.
+        """
 
-        if response_key:
-            try:
-                # there is no error handling if the body returns none
-                data = body[response_key]
-            except KeyError:
-                return []
-        else:
-            data = body
+        if not resource_id:
+            raise Exception(
+                "The identifier argument is invalid. "
+                "Value provided: {!r}".format(resource_id))
+
+        try:
+            return self._list(
+                self._path(resource_id),
+                os_flocx_api_version=os_flocx_api_version)[0]
+        except IndexError:
+            return None
+
+    def _format_body_data(self, body):
+
+        data = body
 
         if not isinstance(data, list):
             data = [data]
 
         return data
 
-    def __list(self, url, response_key=None,
-               os_flocx_api_version=None):
+    def _list(self, url, obj_class=None, os_flocx_api_version=None):
+        if obj_class is None:
+            obj_class = self.resource_class
+
         kwargs = {}
 
         if os_flocx_api_version is not None:
@@ -84,30 +105,35 @@ class Manager(object):
 
         resp, body = self.api.json_request('GET', url, **kwargs)
 
-        data = self._format_body_data(body, response_key)
-
-        return data
-
-    def _list(self, url, response_key=None, obj_class=None, body=None,
-              os_flocx_api_version=None):
-        if obj_class is None:
-            obj_class = self.resource_class
-
-        data = self.__list(url, response_key=response_key,
-                           os_flocx_api_version=os_flocx_api_version)
+        data = self._format_body_data(body)
 
         return [obj_class(self, res) for res in data if res]
 
-
-@six.add_metaclass(abc.ABCMeta)
-class CreateManager(Manager):
-    """Provides creation operations with a particular API."""
-
-    @property
-    @abc.abstractmethod
-    def _creation_attributes(self):
-        """A list of required creation attributes for a resource type.
+    def _create(self, **kwargs):
+        """Create a resource based on a kwargs dictionary of attributes.
+        :param kwargs: A dictionary containing the attributes of the resource
+                       that will be created.
+        :raises exc.InvalidAttribute: For invalid attributes that are not
+                                      needed to create the resource.
         """
+
+        new = {}
+        invalid = []
+        for (key, value) in kwargs.items():
+            if key in self._creation_attributes:
+                new[key] = value
+            else:
+                invalid.append(key)
+        if invalid:
+            raise Exception('The attribute(s) "%(attrs)s" '
+                            'are invalid; they are not '
+                            'needed to create %(resource)s.' %
+                            {'resource': self._resource_name,
+                             'attrs': '","'.join(invalid)})
+        url = self._path()
+        resp, body = self.api.json_request('POST', url, body=new)
+        if body:
+            return self.resource_class(self, body)
 
 
 class Resource(base.Resource):

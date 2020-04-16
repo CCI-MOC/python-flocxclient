@@ -11,6 +11,7 @@
 #    under the License.
 
 import testtools
+import copy
 
 from flocxclient.common import base
 from flocxclient.tests.unit import utils
@@ -29,21 +30,35 @@ TESTABLE_RESOURCE2 = {
 }
 
 
+CREATE_TESTABLE_RESOURCE = copy.deepcopy(TESTABLE_RESOURCE)
+del CREATE_TESTABLE_RESOURCE['uuid']
+
+INVALID_ATTRIBUTE_TESTABLE_RESOURCE = {
+    'non-existent-attribute': 'blablabla',
+    'attribute1': '1',
+    'attribute2': '2',
+}
+
+
 fake_responses = {
     '/v1/testableresources':
     {
         'GET': (
             {},
             [TESTABLE_RESOURCE, TESTABLE_RESOURCE2],
-        )
+        ),
+        'POST': (
+            {},
+            TESTABLE_RESOURCE,
+        ),
     },
     '/v1/testableresources/%s' % TESTABLE_RESOURCE['uuid']:
     {
         'GET': (
             {},
             TESTABLE_RESOURCE,
-        )
-    }
+        ),
+    },
 
 }
 
@@ -53,9 +68,9 @@ class TestableResource(base.Resource):
         return "<TestableResource %s>" % self._info
 
 
-class TestableManager(base.CreateManager):
+class TestableManager(base.Manager):
     resource_class = TestableResource
-    _creation_attributes = []
+    _creation_attributes = ['attribute1', 'attribute2']
     _resource_name = 'testableresources'
 
     def _path(self, id=None):
@@ -65,6 +80,9 @@ class TestableManager(base.CreateManager):
     def list(self, os_flocx_api_version=None):
         return self._list(self._path(),
                           os_flocx_api_version=os_flocx_api_version)
+
+    def get(self, testable_resource_id):
+        return self._get(resource_id=testable_resource_id)
 
 
 class ManagerTestCase(testtools.TestCase):
@@ -108,3 +126,34 @@ class ManagerTestCase(testtools.TestCase):
         assert (len(expected_resources) == 2)
         self.assertEqual(resources_list[0]._info, expected_resources[0]._info)
         self.assertEqual(resources_list[1]._info, expected_resources[1]._info)
+
+    def test_get(self):
+        resource = self.manager.get(TESTABLE_RESOURCE['uuid'])
+        expected_calls = [
+            ('GET', '/v1/testableresources/%s' % TESTABLE_RESOURCE['uuid'],
+             {}, None),
+        ]
+        self.assertEqual(expected_calls, self.api.calls)
+        self.assertEqual(TESTABLE_RESOURCE['uuid'], resource.uuid)
+
+        self.assertEqual(TESTABLE_RESOURCE['attribute1'], resource.attribute1)
+
+    def test__get_invalid_resource_id_raises(self):
+        resource_ids = [[], {}, False, '', 0, None, ()]
+        for resource_id in resource_ids:
+            self.assertRaises(Exception, self.manager._get,
+                              resource_id=resource_id)
+
+    def test_create(self):
+        resource = self.manager._create(**CREATE_TESTABLE_RESOURCE)
+        expected_calls = [
+            ('POST', '/v1/testableresources', {}, CREATE_TESTABLE_RESOURCE),
+        ]
+        self.assertEqual(expected_calls, self.api.calls)
+        self.assertTrue(resource)
+        self.assertIsInstance(resource, TestableResource)
+
+    def test_create_with_invalid_attribute(self):
+        self.assertRaises(Exception,
+                          self.manager._create,
+                          **INVALID_ATTRIBUTE_TESTABLE_RESOURCE)
